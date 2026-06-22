@@ -108,12 +108,7 @@ bool Mapper::addRangeMeasurement(const Mapper::PointCloud& rawScan, const Time& 
       submaps_->insertScan(rawScan, rawScan, Transform::Identity(), timestamp);
     } else {
       const ProcessedScans processed = scan2MapReg_->processForScanMatchingAndMerging(rawScan, mapToRangeSensor_);
-      std::cout
-    << "merge points="
-    << processed.merge_->points_.size()
-    << " colors="
-    << processed.merge_->colors_.size()
-    << std::endl;
+    
       submaps_->insertScan(rawScan, *processed.merge_, Transform::Identity(), timestamp);
       mapToRangeSensorBuffer_.push(timestamp, mapToRangeSensor_);
     }

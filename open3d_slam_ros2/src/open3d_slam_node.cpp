@@ -169,13 +169,10 @@ private:
     }
 
     void publish_cloud() {
-        // 1. Отримуємо доступ до маппера
         auto mapper = slam_wrapper_->getMapper();
         if (!mapper) return;
 
-        // 2. Витягуємо ВСЮ побудовану карту з пам'яті SLAM!
         open3d::geometry::PointCloud global_map = mapper->getAssembledMapPointCloud();
-        
         size_t num_points = global_map.points_.size();
 
         if (num_points == 0) {
@@ -183,15 +180,15 @@ private:
             return;
         }
 
-        // 3. Ініціалізуємо повідомлення
         auto msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
         msg->header.stamp = this->get_clock()->now();
-        msg->header.frame_id = "map"; 
+        msg->header.frame_id = "map"; // або frame, на який налаштований твій TF tree
 
         sensor_msgs::PointCloud2Modifier modifier(*msg);
         bool has_colors = global_map.HasColors();
         
         if (has_colors) {
+            // Використовуємо поле "rgb", яке Foxglove розуміє нативно
             modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
         } else {
             modifier.setPointCloud2FieldsByString(1, "xyz");
@@ -203,49 +200,34 @@ private:
         sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
         
         if (has_colors) {
-            sensor_msgs::PointCloud2Iterator<float> iter_rgb(*msg, "rgb");
-            for (size_t i = 0; i < num_points;
-     ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_rgb)
-        {
-            *iter_x = global_map.points_[i].x();
-            *iter_y = global_map.points_[i].y();
-            *iter_z = global_map.points_[i].z();
+            // Foxglove любить, коли rgb передається як uint8_t ітератор на 4 байти (R, G, B, A)
+            sensor_msgs::PointCloud2Iterator<uint8_t> iter_rgb(*msg, "rgb");
+            
+            for (size_t i = 0; i < num_points; ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_rgb) {
+                *iter_x = global_map.points_[i].x();
+                *iter_y = global_map.points_[i].y();
+                *iter_z = global_map.points_[i].z();
 
-            uint8_t r =
-                static_cast<uint8_t>(global_map.colors_[i].x() * 255.0);
+                // Open3D зберігає кольори як double [0.0, 1.0]. Переводимо в [0, 255]
+                uint8_t r = static_cast<uint8_t>(std::clamp(global_map.colors_[i].x() * 255.0, 0.0, 255.0));
+                uint8_t g = static_cast<uint8_t>(std::clamp(global_map.colors_[i].y() * 255.0, 0.0, 255.0));
+                uint8_t b = static_cast<uint8_t>(std::clamp(global_map.colors_[i].z() * 255.0, 0.0, 255.0));
 
-            uint8_t g =
-                static_cast<uint8_t>(global_map.colors_[i].y() * 255.0);
-
-            uint8_t b =
-                static_cast<uint8_t>(global_map.colors_[i].z() * 255.0);
-
-            union
-            {
-                float rgb_float;
-                uint32_t rgb_uint;
-            };
-
-            rgb_uint =
-                ((uint32_t)r << 16) |
-                ((uint32_t)g << 8)  |
-                ((uint32_t)b);
-
-            *iter_rgb = rgb_float;
-        } 
-        }else {
+                // Foxglove очікує формат: iter_rgb[0]=R, iter_rgb[1]=G, iter_rgb[2]=B (в залежності від endianness, зазвичай BGR)
+                // Стандартний PointCloud2Iterator для "rgb" розміщує: [0]=B, [1]=G, [2]=R (Little Endian)
+                iter_rgb[0] = b; // Blue
+                iter_rgb[1] = g; // Green
+                iter_rgb[2] = r; // Red
+                // iter_rgb[3] = 255; // Alpha (зазвичай ігнорується, але можна залишити)
+            } 
+        } else {
             for (size_t i = 0; i < num_points; ++i, ++iter_x, ++iter_y, ++iter_z) {
                 *iter_x = global_map.points_[i].x();
                 *iter_y = global_map.points_[i].y();
                 *iter_z = global_map.points_[i].z();
             }
         }
-        RCLCPP_INFO(
-    this->get_logger(),
-    "points=%ld colors=%ld has_colors=%d",
-    global_map.points_.size(),
-    global_map.colors_.size(),
-    global_map.HasColors());
+       
         publisher_->publish(std::move(msg));
     }
     void pointCloudCallback(sensor_msgs::msg::PointCloud2::SharedPtr msg) {
@@ -342,13 +324,8 @@ private:
 
         if (o3d_cloud.IsEmpty()) return;
 
-        try {
-            o3d_cloud.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
-            o3d_cloud.OrientNormalsTowardsCameraLocation(Eigen::Vector3d(0.0, 0.0, 0.0));
-        } catch (const std::exception& e) {
-            RCLCPP_ERROR(this->get_logger(), "Normal estimation failed: %s", e.what());
-            return;
-        }
+        o3d_cloud.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
+        o3d_cloud.OrientNormalsTowardsCameraLocation(Eigen::Vector3d(0.0, 0.0, 0.0));
 
         point_cloud = o3d_cloud;
         time = fromROSTime(msg->header.stamp);

@@ -12,7 +12,7 @@ def generate_launch_description():
     sequences_dir_arg = DeclareLaunchArgument('sequences_dir', default_value='', description='Directory containing multiple sequences')
     sequence_name_arg = DeclareLaunchArgument('sequence_name', default_value='', description='Sequence filename inside sequences_dir')
 
-    default_param = os.path.join(get_package_share_directory('open3d_slam_core'), 'include', 'example_param', 'configuration.lua')
+    default_param = os.path.join(get_package_share_directory('open3d_slam_core'), 'include','example_param', 'configuration.lua')
     parameter_file_arg = DeclareLaunchArgument('parameter_file', default_value=default_param, description='Path to Lua parameter file')
 
     use_sim_time_arg = DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulated time')

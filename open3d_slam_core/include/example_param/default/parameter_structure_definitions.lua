@@ -20,8 +20,6 @@ function deepcopy(orig, copies)
     return copy
 end
 
-
-
 SAVING_PARAMETERS = {
   save_at_mission_end = true,
   save_map = false,
@@ -50,65 +48,65 @@ GLOBAL_OPTIMIZATION_PARAMETERS = {
 }
 
 SCAN_CROPPING_PARAMETERS = {
-  cropping_radius_max= 30.0,
-  cropping_radius_min= 2.0,
-  min_z= -50.0,
-  max_z= 50.0,
-  cropper_type= "MinMaxRadius", -- options are Cylinder, MaxRadius, MinRadius, MinMaxRadius
+  cropping_radius_max = 30.0,
+  cropping_radius_min = 2.0,
+  min_z = -50.0,
+  max_z = 50.0,
+  cropper_type = "MinMaxRadius",
 }
 
 SCAN_PROCESSING_PARAMETERS = {
   voxel_size = 0.1,
   downsampling_ratio = 0.3,
   scan_cropping = deepcopy(SCAN_CROPPING_PARAMETERS),
+  point_cloud_buffer_size = 1, -- ДОДАНО
 }
 
 ICP_PARAMETERS = {
-  max_correspondence_dist= 1.0,
-  knn= 20,
-  max_distance_knn= 3.0,
-  max_n_iter= 50,
+  max_correspondence_dist = 1.0,
+  knn = 20,
+  max_distance_knn = 3.0,
+  max_n_iter = 50,
 }
 
 SCAN_MATCHING_PARAMETERS = {
   icp = deepcopy(ICP_PARAMETERS),
-  cloud_registration_type = "GeneralizedIcp", -- options GeneralizedIcp, PointToPointIcp, PointToPlaneIcp
+  cloud_registration_type = "GeneralizedIcp",
 }
 
 ODOMETRY_PARAMETERS = {
   is_publish_odometry_msgs = false,
   scan_matching = deepcopy(SCAN_MATCHING_PARAMETERS),
   scan_processing = deepcopy(SCAN_PROCESSING_PARAMETERS),
+  odometry_buffer_size = 10, -- ДОДАНО
 }
 
 SUBMAP_PARAMETERS = {
-  submap_size = 20, -- meters
+  submap_size = 20,
   min_num_range_data = 10,
   adjacency_based_revisiting_min_fitness = 0.5,
   submaps_num_scan_overlap = 10,
 }
 
 SPACE_CARVING_PARAMETERS = {
-  voxel_size= 0.2,
+  voxel_size = 0.2,
   max_raytracing_length = 20.0,
   truncation_distance = 0.3,
-  carve_space_every_n_scans= 10.0,
+  carve_space_every_n_scans = 10.0,
 }
 
-
 MAP_BUILDER_PARAMETERS = {
-  map_voxel_size = 0.1, --meters
+  map_voxel_size = 0.1,
   scan_cropping = deepcopy(SCAN_CROPPING_PARAMETERS),
   space_carving = deepcopy(SPACE_CARVING_PARAMETERS),
 }
 
 SCAN_TO_MAP_REGISTRATION_PARAMETERS = {
   min_refinement_fitness = 0.7,
-  scan_to_map_refinement_type = "GeneralizedIcp", -- options GeneralizedIcp, PointToPointIcp, PointToPlaneIcp
+  scan_to_map_refinement_type = "GeneralizedIcp",
   icp = deepcopy(ICP_PARAMETERS),
   scan_processing = deepcopy(SCAN_PROCESSING_PARAMETERS),
 }
-
 
 MAPPER_LOCALIZER_PARAMETERS = {
   is_print_timing_information = true,
@@ -120,13 +118,15 @@ MAPPER_LOCALIZER_PARAMETERS = {
   is_refine_odometry_constraints_between_submaps = false,
   min_movement_between_mapping_steps = 0.0,
   scan_to_map_registration = deepcopy(SCAN_TO_MAP_REGISTRATION_PARAMETERS),
+  ignore_minimum_refinement_fitness = false, -- ДОДАНО
+  mapping_buffer_size = 10, -- ДОДАНО
 }
 
 POSE = {
  x = 0.0,
  y = 0.0,
  z = 0.0,
- roll = 0.0, --roll, pitch ,yaw in degrees!!!!!
+ roll = 0.0,
  pitch = 0.0,
  yaw = 0.0,
 }
@@ -139,12 +139,12 @@ MAP_INITIALIZER_PARAMETERS = {
 }
 
 LOOP_CLOSURE_CONSISTENCY_CHECK_PARAMETERS = {
-  max_drift_roll = 30.0, --deg
-  max_drift_pitch = 30.0, --deg
-  max_drift_yaw = 30.0, --deg
-  max_drift_x = 80.0, --meters
-  max_drift_y = 80.0, --meters
-  max_drift_z = 40.0, --meters
+  max_drift_roll = 30.0,
+  max_drift_pitch = 30.0,
+  max_drift_yaw = 30.0,
+  max_drift_x = 80.0,
+  max_drift_y = 80.0,
+  max_drift_z = 40.0,
 }
 
 PLACE_RECOGNITION_PARAMETERS = {
@@ -161,10 +161,9 @@ PLACE_RECOGNITION_PARAMETERS = {
   ransac_correspondence_checker_edge_length = 0.6,
   ransac_min_corresondence_set_size = 25,
   max_icp_correspondence_distance = 0.3,
-  min_icp_refinement_fitness = 0.7, -- the more aliasing, the higher this should be
-  dump_aligned_place_recognitions_to_file = false , --useful for debugging
+  min_icp_refinement_fitness = 0.7,
+  dump_aligned_place_recognitions_to_file = false,
   min_submaps_between_loop_closures = 2,
   loop_closure_search_radius = 20.0,
   consistency_check = deepcopy(LOOP_CLOSURE_CONSISTENCY_CHECK_PARAMETERS),
 }
-
