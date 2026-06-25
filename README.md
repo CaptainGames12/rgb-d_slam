@@ -30,6 +30,22 @@ The primary objective is to estimate camera trajectories and compare them agains
 
 ---
 
+## Table of Contents
+
+- Project Overview
+- Background
+- Methods
+  - Open3D-SLAM
+  - small_gicp
+  - PCL ICP
+- Comparative Evaluation
+- Results
+- Installation
+- Usage
+- Team
+
+
+
 # Introduction
 
 **Simultaneous Localization and Mapping (SLAM)** is one of the fundamental challenges in robotics and computer vision.
