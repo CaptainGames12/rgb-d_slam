@@ -1,0 +1,18 @@
+# Dataset
+datasets/
+
+# ROS build
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+
+# VSCode
+.vscode/
+
+# Ignore generated trajectories and logs
+results/*/trajectories/
+results/*/logs/
