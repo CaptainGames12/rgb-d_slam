@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch.event_handlers import OnProcessExit
 
 def generate_launch_description():
-    # 1. Оголошення аргументів
+
     seq_file_arg = DeclareLaunchArgument('sequence_file', default_value='', description='Full path to ScanNet sequence file')
     sequences_dir_arg = DeclareLaunchArgument('sequences_dir', default_value='', description='Directory containing multiple sequences')
     sequence_name_arg = DeclareLaunchArgument('sequence_name', default_value='', description='Sequence filename inside sequences_dir')
@@ -20,7 +20,7 @@ def generate_launch_description():
     depth_topic_arg = DeclareLaunchArgument('depth_topic', default_value='/camera/depth/image_raw', description='Depth image topic')
     camera_info_topic_arg = DeclareLaunchArgument('camera_info_topic', default_value='/camera/depth/camera_info', description='CameraInfo topic')
 
-    # НОВІ ПАРАМЕТРИ ДЛЯ ФАЙЛІВ ТРАЄКТОРІЙ
+
     output_gt_file_arg = DeclareLaunchArgument(
         'output_gt_file',
         default_value='gt.txt',
@@ -34,23 +34,23 @@ def generate_launch_description():
 
     evaluate_arg = DeclareLaunchArgument('evaluate', default_value='false', description='Run evaluation script after SLAM')
 
-    # 2. Формування словників з параметрами для нод
+
     scannet_params = {
         'file': LaunchConfiguration('sequence_file'),
         'depth_topic': LaunchConfiguration('depth_topic'),
         'camera_info_topic': LaunchConfiguration('camera_info_topic'),
-        'output_gt_file': LaunchConfiguration('output_gt_file') # Передаємо шлях у Python-паблішер
+        'output_gt_file': LaunchConfiguration('output_gt_file')
     }
 
     slam_params = {
         'parameter_file': LaunchConfiguration('parameter_file'),
         'use_sim_time': LaunchConfiguration('use_sim_time'),
-        'output_trajectory_file': LaunchConfiguration('output_trajectory_file') # Передаємо шлях у C++ ядро
+        'output_trajectory_file': LaunchConfiguration('output_trajectory_file')
     }
 
-    # 3. Ініціалізація нод
+
     scannet_node = Node(
-        package='scannet_publisher', # Переконайся, що назва пакета збігається з твоєю
+        package='scannet_publisher',
         executable='scannet_publisher',
         name='scannet_publisher',
         output='screen',
@@ -67,7 +67,7 @@ def generate_launch_description():
 
     actions = [scannet_node, slam_node]
 
-    # 4. Скрипт евалюації (Запускається лише після завершення slam_node)
+
     eval_script = os.path.join(
         get_package_share_directory('open3d_slam_ros2'),
         'evaluate_trajectory.py'
@@ -96,8 +96,8 @@ def generate_launch_description():
         use_sim_time_arg,
         depth_topic_arg,
         camera_info_topic_arg,
-        output_gt_file_arg,          # Додано
-        output_trajectory_file_arg,  # Додано
+        output_gt_file_arg,
+        output_trajectory_file_arg,
         evaluate_arg,
         *actions
     ])
