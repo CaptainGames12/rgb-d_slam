@@ -1,0 +1,9 @@
+Best Scene
+
+Scene              scene0378_00
+ATE Mean                 0.7132
+ATE Median               0.6393
+ATE Std                  0.4135
+ATE Max                  1.8418
+RPE Translation             NaN
+RPE Rotation                NaN

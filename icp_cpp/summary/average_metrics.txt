@@ -1,0 +1,9 @@
+Average ICP Results
+=========================
+
+ATE Mean: 1.6522
+ATE Median: 1.5806
+ATE Std: 0.8170
+ATE Max: 3.4242
+RPE Translation: 0.9817
+RPE Rotation: 1.7964

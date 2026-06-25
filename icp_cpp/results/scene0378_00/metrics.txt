@@ -1,0 +1,54 @@
+Loading ground truth: /home/swayam/rgb-d_slam/icp_cpp/results/scene0378_00/trajectories/groundtruth_trajectory.txt
+  Loaded 1892 poses
+Loading estimated trajectory: /home/swayam/rgb-d_slam/icp_cpp/results/scene0378_00/trajectories/estimated_trajectory.txt
+  Loaded 1891 poses
+
+Aligning trajectories...
+
+Computing metrics...
+
+============================================================
+TRAJECTORY EVALUATION RESULTS
+============================================================
+Absolute Trajectory Error (ATE):
+  Mean:   0.7132 m
+  Median: 0.6393 m
+  Std:    0.4135 m
+  Max:    1.8418 m
+
+Relative Pose Error (RPE):
+  Translation: nan m/m
+  Rotation:    nan deg/m
+============================================================
+Loading trajectories...
+Aligning trajectories...
+Generating plots...
+
+Plots saved to: /home/swayam/rgb-d_slam/icp_cpp/results/scene0378_00/plots
+  01_trajectory_3d.png
+  02_trajectory_2d.png
+  03_position_components.png
+  04_orientation_components.png
+  05_ate_over_time.png
+06_error_vectors.png
+07_error_histogram.png
+08_running_mean_error.png
+09_error_heatmap.png
+============================================================
+EVALUATING TRAJECTORY
+============================================================
+
+============================================================
+GENERATING PLOTS
+============================================================
+
+
+============================================================
+DONE!
+============================================================
+
+Plots saved to: /home/swayam/rgb-d_slam/icp_cpp/results/scene0378_00/plots
+Open plots with:
+  eog /home/swayam/rgb-d_slam/icp_cpp/results/scene0378_00/plots/*.png  # Eye of GNOME
+  feh /home/swayam/rgb-d_slam/icp_cpp/results/scene0378_00/plots/*.png  # Feh
+  or view in file manager

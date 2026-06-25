@@ -1,0 +1,9 @@
+Worst Scene
+
+Scene              scene0011_01
+ATE Mean                 3.3213
+ATE Median                3.481
+ATE Std                  1.4055
+ATE Max                  5.8238
+RPE Translation             NaN
+RPE Rotation                NaN
