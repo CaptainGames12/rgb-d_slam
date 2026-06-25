@@ -43,11 +43,11 @@ install(DIRECTORY launch/
 )
 
 # Install Python scripts
-install(FILES
+install(PROGRAMS
   open3d_slam_ros2/evaluate_trajectory.py
   open3d_slam_ros2/plot_trajectory.py
   open3d_slam_ros2/evaluate_and_plot.py
-  DESTINATION lib/${PROJECT_NAME}
+  DESTINATION share/${PROJECT_NAME}
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
               GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE

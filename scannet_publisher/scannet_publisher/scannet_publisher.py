@@ -21,7 +21,9 @@ class ScanNetPublisher(Node):
     def __init__(self):
         super().__init__('scannet_publisher')
         # Відкриваємо файл для запису траєкторії
-        self.odom_file = open('gt.txt', 'w')
+        self.declare_parameter('output_gt_file', 'gt.txt')
+        gt_path = self.get_parameter('output_gt_file').value
+        self.odom_file = open(gt_path, 'w')
         file_path = self.declare_parameter(
             name='file',
             value=str(),

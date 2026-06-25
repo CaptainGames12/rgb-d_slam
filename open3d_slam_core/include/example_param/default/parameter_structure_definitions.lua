@@ -42,8 +42,8 @@ VISUALIZATION_PARAMETERS = {
 
 GLOBAL_OPTIMIZATION_PARAMETERS = {
   edge_prune_threshold = 0.2,
-  loop_closure_preference = 2.0,
-  max_correspondence_distance = 1000.0,
+  loop_closure_preference = 0.3,
+  max_correspondence_distance = 100.0,
   reference_node = 0,
 }
 
@@ -56,14 +56,14 @@ SCAN_CROPPING_PARAMETERS = {
 }
 
 SCAN_PROCESSING_PARAMETERS = {
-  voxel_size = 0.1,
-  downsampling_ratio = 0.3,
+  voxel_size = 0.03,--
+  downsampling_ratio = 1.0,
   scan_cropping = deepcopy(SCAN_CROPPING_PARAMETERS),
   point_cloud_buffer_size = 1, -- ДОДАНО
 }
 
 ICP_PARAMETERS = {
-  max_correspondence_dist = 1.0,
+  max_correspondence_dist = 0.5,
   knn = 20,
   max_distance_knn = 3.0,
   max_n_iter = 50,
@@ -96,7 +96,7 @@ SPACE_CARVING_PARAMETERS = {
 }
 
 MAP_BUILDER_PARAMETERS = {
-  map_voxel_size = 0.1,
+  map_voxel_size = 0.05,
   scan_cropping = deepcopy(SCAN_CROPPING_PARAMETERS),
   space_carving = deepcopy(SPACE_CARVING_PARAMETERS),
 }
@@ -149,7 +149,7 @@ LOOP_CLOSURE_CONSISTENCY_CHECK_PARAMETERS = {
 
 PLACE_RECOGNITION_PARAMETERS = {
   feature_map_normal_estimation_radius = 2.0,
-  feature_voxel_size = 0.5,
+  feature_voxel_size = 0.1,
   feature_radius = 2.5,
   feature_knn = 100,
   feature_normal_knn = 20,

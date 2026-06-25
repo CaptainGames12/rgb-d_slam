@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <open3d_slam/Mapper.hpp>
 #include <open3d_slam/TransformInterpolationBuffer.hpp>
-
+#include <mutex>
 class Open3D_Slam_Node : public rclcpp::Node
 {
 public:
@@ -22,10 +22,10 @@ public:
 
     Open3D_Slam_Node() : Node("open3d_slam_node")
     {
-        // Оновлені топіки, які ідеально підходять під твій ScanNetPublisher
-        this->declare_parameter<std::string>("cloud_topic", "/camera/depth/color/points"); // Резервний
+        // Topics
+        this->declare_parameter<std::string>("cloud_topic", "/camera/depth/color/points");
         this->declare_parameter<std::string>("depth_topic", "/camera/depth/image_raw");
-        this->declare_parameter<std::string>("color_topic", "/camera/color/image_raw"); // ДОДАНО
+        this->declare_parameter<std::string>("color_topic", "/camera/color/image_raw");
         this->declare_parameter<std::string>("camera_info_topic", "/camera/depth/camera_info");
         
         this->declare_parameter<std::string>("publish_cloud_topic", "my_point_cloud");
@@ -87,6 +87,8 @@ public:
     }
 
 private:
+
+    std::mutex slam_mutex_;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscriber_;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr depth_subscriber_;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr color_subscriber_;
@@ -169,6 +171,7 @@ private:
     }
 
     void publish_cloud() {
+        std::lock_guard<std::mutex> lock(slam_mutex_);
         auto mapper = slam_wrapper_->getMapper();
         if (!mapper) return;
 
@@ -176,7 +179,7 @@ private:
         size_t num_points = global_map.points_.size();
 
         if (num_points == 0) {
-            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Глобальна карта ще порожня...");
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Global map is empty");
             return;
         }
 
@@ -188,7 +191,7 @@ private:
         bool has_colors = global_map.HasColors();
         
         if (has_colors) {
-            // Використовуємо поле "rgb", яке Foxglove розуміє нативно
+
             modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
         } else {
             modifier.setPointCloud2FieldsByString(1, "xyz");
@@ -200,7 +203,7 @@ private:
         sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
         
         if (has_colors) {
-            // Foxglove любить, коли rgb передається як uint8_t ітератор на 4 байти (R, G, B, A)
+
             sensor_msgs::PointCloud2Iterator<uint8_t> iter_rgb(*msg, "rgb");
             
             for (size_t i = 0; i < num_points; ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_rgb) {
@@ -208,17 +211,15 @@ private:
                 *iter_y = global_map.points_[i].y();
                 *iter_z = global_map.points_[i].z();
 
-                // Open3D зберігає кольори як double [0.0, 1.0]. Переводимо в [0, 255]
+
                 uint8_t r = static_cast<uint8_t>(std::clamp(global_map.colors_[i].x() * 255.0, 0.0, 255.0));
                 uint8_t g = static_cast<uint8_t>(std::clamp(global_map.colors_[i].y() * 255.0, 0.0, 255.0));
                 uint8_t b = static_cast<uint8_t>(std::clamp(global_map.colors_[i].z() * 255.0, 0.0, 255.0));
 
-                // Foxglove очікує формат: iter_rgb[0]=R, iter_rgb[1]=G, iter_rgb[2]=B (в залежності від endianness, зазвичай BGR)
-                // Стандартний PointCloud2Iterator для "rgb" розміщує: [0]=B, [1]=G, [2]=R (Little Endian)
                 iter_rgb[0] = b; // Blue
                 iter_rgb[1] = g; // Green
                 iter_rgb[2] = r; // Red
-                // iter_rgb[3] = 255; // Alpha (зазвичай ігнорується, але можна залишити)
+
             } 
         } else {
             for (size_t i = 0; i < num_points; ++i, ++iter_x, ++iter_y, ++iter_z) {
@@ -232,16 +233,31 @@ private:
     }
     void pointCloudCallback(sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         point_cloud = convertROSCloudToOpen3D(msg);
-        time = fromROSTime(msg->header.stamp);
-        if (point_cloud.IsEmpty()) return;
+        if (point_cloud.IsEmpty()) {
+            RCLCPP_WARN(this->get_logger(), "Cloud is empty");
+            return;//Skip empty cloud
+        }
 
-        point_cloud.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
-        point_cloud.OrientNormalsTowardsCameraLocation(Eigen::Vector3d(0.0, 0.0, 0.0));
+
+        if (point_cloud.points_.size() < 100) {
+            RCLCPP_WARN(this->get_logger(), "Cloud is too small (%zu points)", point_cloud.points_.size());
+            return;
+        }
+
+        // Calculate normals if they are none
+        if (!point_cloud.HasNormals()) {
+
+            point_cloud.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
+            point_cloud.OrientNormalsTowardsCameraLocation(Eigen::Vector3d(0.0, 0.0, 0.0));
+        }
+        time = fromROSTime(msg->header.stamp);
+
+
         slam_wrapper_->addRangeScan(point_cloud, time);
         publishLiveTrajectory();
     }
 
-    // Зберігаємо останній кольоровий кадр
+
     void colorImageCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
         latest_color_image_ = msg;
     }
@@ -266,7 +282,7 @@ private:
         double cx = latest_camera_info_->k[2];
         double cy = latest_camera_info_->k[5];
 
-        // Синхронізація кольору та глибини (Перевірка часу та формату)
+
         bool has_color = false;
         bool is_bgr = true;
         const uint8_t* color_row_ptr = nullptr;
@@ -275,8 +291,7 @@ private:
         if (latest_color_image_) {
             double t_depth = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
             double t_color = latest_color_image_->header.stamp.sec + latest_color_image_->header.stamp.nanosec * 1e-9;
-            
-            // Оскільки Python публікує їх одночасно, різниця буде мінімальною
+
             if (std::abs(t_depth - t_color) < 0.1) {
                 if (latest_color_image_->encoding == "bgr8") {
                     has_color = true; is_bgr = true;
@@ -308,7 +323,7 @@ private:
                 if (has_color) {
                     int idx = u * 3;
                     double r, g, b;
-                    if (is_bgr) { // ScanNet Python Node надсилає BGR
+                    if (is_bgr) {
                         b = static_cast<double>(c_ptr[idx + 0]) / 255.0;
                         g = static_cast<double>(c_ptr[idx + 1]) / 255.0;
                         r = static_cast<double>(c_ptr[idx + 2]) / 255.0;
@@ -324,13 +339,32 @@ private:
 
         if (o3d_cloud.IsEmpty()) return;
 
-        o3d_cloud.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
-        o3d_cloud.OrientNormalsTowardsCameraLocation(Eigen::Vector3d(0.0, 0.0, 0.0));
+
 
         point_cloud = o3d_cloud;
+        if (point_cloud.IsEmpty()) {
+            RCLCPP_WARN(this->get_logger(), "Cloud is empty");
+            return;
+        }
+
+
+        if (point_cloud.points_.size() < 100) {
+            RCLCPP_WARN(this->get_logger(), "Cloud is too small (%zu points)", point_cloud.points_.size());
+            return;
+        }
+
+
+        if (!point_cloud.HasNormals()) {
+
+            point_cloud.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
+            point_cloud.OrientNormalsTowardsCameraLocation(Eigen::Vector3d(0.0, 0.0, 0.0));
+        }
         time = fromROSTime(msg->header.stamp);
-        
+
+
+
         try {
+            std::lock_guard<std::mutex> lock(slam_mutex_);
             slam_wrapper_->addRangeScan(point_cloud, time);
             publishLiveTrajectory();
         } catch (const std::exception& e) {
